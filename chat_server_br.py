@@ -7,25 +7,25 @@ class MultiChatServer:
     def __init__(self):
         self.clients = []
         self.final_received_message = ""
-        self.s_sock = socket(AF_INET,SOCK_STREAM)
-        self. ip=''
+        self.s_sock = socket(AF_INET, SOCK_STREAM)
+        self.ip = ''
         self.port = 5959
-        self.s_sock.setsockopt(SOL_SOCKET,SO_REUSEADDR,1)
-        self.s_sock.bind((self.ip,self.port))
+        self.s_sock.setsockopt(SOL_SOCKET, SO_REUSEADDR, 1)
+        self.s_sock.bind((self.ip, self.port))
         print('클라이언트 대기중. . . ')
         self.s_sock.listen(3)
         self.accept_client()
 
     def accept_client(self):
         while True:
-            client = c_socket,(ip,port) = self.s_sock.accept()
+            client = c_socket, (ip, port) = self.s_sock.accept()
             if client not in self.clients:
                 self.clients.append(client)
             print(f'{ip},:,{str(port)}가 연결되었습니다.')
-            cth = Thread(target=self.receive_messages,args=(c_socket,))
+            cth = Thread(target=self.receive_messages, args=(c_socket,))
             cth.start()
 
-    def receive_messages(self,c_socket):
+    def receive_messages(self, c_socket):
         while True:
             try:
                 incoming_message = c_socket.recv(256)
@@ -39,15 +39,16 @@ class MultiChatServer:
                 self.send_all_clients(c_socket)
         # c_socket.close()
 
-    def send_all_clients (self,senders_socket):
+    def send_all_clients(self, senders_socket):
         for client in self.clients:
-            socket,(ip,port) = client
+            socket, (ip, port) = client
             if socket is not senders_socket:
                 try:
                     socket.sendall(self.final_received_message.encode())
                 except:
                     self.clients.remove(client)
-                    print("{},{} 연결이 종료되었습니다".format(ip,port))
+                    print("{},{} 연결이 종료되었습니다".format(ip, port))
 
-if __name__=="__main__":
+
+if __name__ == "__main__":
     MultiChatServer()
