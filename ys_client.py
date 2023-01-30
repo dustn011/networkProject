@@ -4,12 +4,11 @@ import threading
 import time
 import pymysql
 import sys
-from PyQt5.QtGui import *
-from PyQt5.QtWidgets import QApplication, QWidget, QMessageBox
 from PyQt5.QtWidgets import *
 from PyQt5 import uic
 from PyQt5.QtCore import *
 from PyQt5.QtGui import QIntValidator
+from datetime import timedelta, datetime, time
 
 from socket import *
 from threading import *
@@ -40,8 +39,12 @@ class test(QWidget, form_class):
     def method_sendMessage(self):
         sender_name = self.led_insertName.text()
         message = self.ted_message.text()
-        data = (f"{sender_name} : {message}").encode('utf-8')
-        self.textEdit.append(data.decode('utf-8')+'\n')
+
+        message_datetime = datetime.now().strftime("%D %T")
+        print(message_datetime)
+
+        data = (f"{message_datetime}.{sender_name}.{message}").encode('utf-8')
+        self.textEdit.append(f"[{message_datetime}]. [{sender_name}].\n{message}\n")
         self.client_socket.send(data)
         self.ted_message.clear()
         print(sender_name)
