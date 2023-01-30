@@ -23,7 +23,7 @@
     </rect>
    </property>
    <property name="currentIndex">
-    <number>2</number>
+    <number>1</number>
    </property>
    <widget class="QWidget" name="insertNamePage">
     <widget class="QPushButton" name="btn_joinChat">
@@ -34,6 +34,11 @@
        <width>81</width>
        <height>31</height>
       </rect>
+     </property>
+     <property name="font">
+      <font>
+       <family>맑은 고딕</family>
+      </font>
      </property>
      <property name="text">
       <string>입장하기</string>
@@ -57,6 +62,12 @@
        <width>161</width>
        <height>41</height>
       </rect>
+     </property>
+     <property name="font">
+      <font>
+       <family>맑은 고딕</family>
+       <pointsize>11</pointsize>
+      </font>
      </property>
      <property name="text">
       <string>이름을 입력해주세요</string>
@@ -90,17 +101,7 @@
       <string>전송</string>
      </property>
     </widget>
-    <widget class="QListWidget" name="listwdg_message">
-     <property name="geometry">
-      <rect>
-       <x>40</x>
-       <y>80</y>
-       <width>451</width>
-       <height>421</height>
-      </rect>
-     </property>
-    </widget>
-    <widget class="QLabel" name="label_2">
+    <widget class="QLabel" name="lbl_wellcome">
      <property name="geometry">
       <rect>
        <x>40</x>
@@ -140,6 +141,16 @@
      </property>
      <property name="text">
       <string>게임하기</string>
+     </property>
+    </widget>
+    <widget class="QListWidget" name="listwdg_chattingBox">
+     <property name="geometry">
+      <rect>
+       <x>40</x>
+       <y>80</y>
+       <width>451</width>
+       <height>421</height>
+      </rect>
      </property>
     </widget>
    </widget>
