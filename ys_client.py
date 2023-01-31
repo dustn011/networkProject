@@ -56,6 +56,14 @@ class test(QWidget, form_class):
             QMessageBox.information(self, '입력 오류', '이름을 입력해주세요')
         else:
             self.lbl_wellcome.setText(f'{self.led_insertName.text()}님 환영합니다')
+            self.listwdg_chattingBox.addItem(f"\n<<< [{datetime.now().strftime('%D %T')}] [{self.led_insertName.text()}] 님이 채팅방에 입장하셨습니다 >>> \n")
+            # 리스트 위젯 스크롤바 아래로 고정
+            self.listwdg_chattingBox.scrollToBottom()
+
+            # 서버로 전송
+            alarm = [datetime.now().strftime('%D %T'), self.led_insertName.text()]
+            send_alarm = json.dumps(alarm)
+            self.client_socket.send(send_alarm.encode('utf-8'))
             self.stackedWidget.setCurrentIndex(1)
 
     # 채팅방 나가기 메서드
@@ -75,8 +83,9 @@ class test(QWidget, form_class):
         self.client_socket.send(setMessageData.encode('utf-8'))  # 연결된 소켓(서버)에 채팅 로그 데이터 보내줌
 
         # 리스트 위젯에 작성한 글 append해줌
-        self.listwdg_chattingBox.addItem(f"[{message_datetime}] [{sender_name}]\n{message}\n")
+        self.listwdg_chattingBox.addItem(f"[{message_datetime}] [{sender_name}]\n{message}")
         self.led_sendMessage.clear()    # 작성한 글은 전송 후 ui에서 지워줌
+
         # 리스트 위젯 스크롤바 아래로 고정
         self.listwdg_chattingBox.scrollToBottom()
 
@@ -92,7 +101,7 @@ class test(QWidget, form_class):
             buf = so.recv(9999)
             if not buf:     # 연결이 종료됨
                 break
-            elif self.set_chattingLog == 0:
+            elif self.set_chattingLog == 0:         # 처음 입장했을 때 모든 내역 출력
                 message_log = json.loads(buf.decode('utf-8'))
                 a = 1
                 setting = ''
@@ -100,14 +109,16 @@ class test(QWidget, form_class):
                     if a%3 != 0:
                         setting += f"[{message_log[i]}] "
                     else:
-                        self.listwdg_chattingBox.addItem(setting + '\n' + message_log[i] + '\n')
+                        self.listwdg_chattingBox.addItem(setting + '\n' + message_log[i] + '')
                         setting = ''
+                        # 리스트 위젯 스크롤바 아래로 고정
+                        self.listwdg_chattingBox.scrollToBottom()
                     a += 1
                 self.set_chattingLog += 1
             else:
-                self.listwdg_chattingBox.addItem(buf.decode()+'\n')
-            # 리스트 위젯 스크롤바 아래로 고정
-            self.listwdg_chattingBox.scrollToBottom()
+                self.listwdg_chattingBox.addItem(buf.decode())
+                # 리스트 위젯 스크롤바 아래로 고정
+                self.listwdg_chattingBox.scrollToBottom()
             time.sleep(0.1)
         so.close()
 

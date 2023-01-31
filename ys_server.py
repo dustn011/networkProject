@@ -64,7 +64,6 @@ class MultiChatServer:
             ctn.start()     # 스레드 시작
 
     # 데이터를 수신하여 모든 클라이언트에게 전송하고 수신한 데이터를 DB에 저장한다
-    # ↑ 수신한 데이터를 DB에 저장하고 DB가 갱신되면 실행되는 trigger을 써서 다시 DB를 가져온다. 가져온 DB를 모든 클라이언트에게 전송한다(이거 아님)
     def receive_messages(self, c_socket):
         while True:
             try:
@@ -75,26 +74,43 @@ class MultiChatServer:
                 continue
             else:
                 self.recived_message = json.loads(incoming_message.decode('utf-8'))
-                self.send_all_clients(c_socket)      # 열려있는 모든 클라이언트들에게 메세지 보내기
+                if len(self.recived_message) > 2:
+                    self.sendMessage_all_clients(c_socket)      # 열려있는 모든 클라이언트들에게 메세지 보내기
+                    # DB 열기
+                    chat_data = pymysql.connect(host='10.10.21.102', user='lilac', password='0000', db='network_project',
+                                                charset='utf8')
+                    # DB와 상호작용하기 위해 연결해주는 cursor 객체 만듬
+                    chat_db = chat_data.cursor()
 
-                # DB 열기
-                chat_data = pymysql.connect(host='10.10.21.102', user='lilac', password='0000', db='network_project',
-                                            charset='utf8')
-                # DB와 상호작용하기 위해 연결해주는 cursor 객체 만듬
-                chat_db = chat_data.cursor()
+                    # insert문 넣어주기
+                    insert_sql = f"INSERT INTO chat VALUES (now(), '{self.recived_message[1]}', '{self.recived_message[2]}')"
 
-                # insert문 넣어주기
-                insert_sql = f"INSERT INTO chat VALUES (now(), '{self.recived_message[1]}', '{self.recived_message[2]}')"
+                    # execute 메서드로 db에 sql 문장 전송
+                    chat_db.execute(insert_sql)
+                    # insert문 실행
+                    chat_data.commit()
+                    # DB 닫아주기
+                    chat_data.close()
+                else:
+                    self.sendAlarm_all_clients(c_socket)      # 열려있는 모든 클라이언트들에게 알림 보내기
 
-                # execute 메서드로 db에 sql 문장 전송
-                chat_db.execute(insert_sql)
-                # insert문 실행
-                chat_data.commit()
-                # DB 닫아주기
-                chat_data.close()
         c_socket.close()
 
-    def send_all_clients(self, senders_socket):
+    # 알람 보내기
+    def sendAlarm_all_clients(self, senders_socket):
+        sendall_Alarm = f"\n<<< [{self.recived_message[0]}] [{self.recived_message[1]}] 님이 채팅방에 입장하셨습니다 >>> \n"
+
+        for client in self.clients:  # 목록에 있는 모든 소켓에 대해
+            socket, (ip, port) = client
+            if socket is not senders_socket:  # 송신 클라이언트는 제외
+                try:
+                    socket.sendall(sendall_Alarm.encode())
+                except:  # 연결 종료
+                    self.clients.remove(client)  # 소켓 제거
+                    print(f"{datetime.now().strftime('%D %T')}, {ip}, {port} 연결이 종료되었습니다")
+
+    # 메시지 보내기
+    def sendMessage_all_clients(self, senders_socket):
         sendall_message = f"[{self.recived_message[0]}] [{self.recived_message[1]}]\n{self.recived_message[2]}"
 
         for client in self.clients:     # 목록에 있는 모든 소켓에 대해
@@ -102,7 +118,7 @@ class MultiChatServer:
             if socket is not senders_socket:    # 송신 클라이언트는 제외
                 try:
                     socket.sendall(sendall_message.encode())
-                except:     # 연결 종료
+                except:     # 메시지가 전송되지 않으면 연결 종료된 소켓이므로 지워준다
                     self.clients.remove(client)     # 소켓 제거
                     print(f"{datetime.now().strftime('%D %T')}, {ip}, {port} 연결이 종료되었습니다")
 
