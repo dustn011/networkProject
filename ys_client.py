@@ -13,7 +13,7 @@ from threading import *
 form_class = uic.loadUiType("ui/chat.ui")[0]
 
 
-class test(QWidget, form_class):
+class Client(QWidget, form_class):
     client_socket = None
 
     def __init__(self):
@@ -126,7 +126,7 @@ class test(QWidget, form_class):
 if __name__ == "__main__":
     app = QApplication(sys.argv)
 
-    myWindow = test()
+    myWindow = Client()
 
     myWindow.show()
 

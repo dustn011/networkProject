@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>528</width>
+    <width>1001</width>
     <height>690</height>
    </rect>
   </property>
@@ -18,18 +18,18 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>531</width>
+     <width>1001</width>
      <height>691</height>
     </rect>
    </property>
    <property name="currentIndex">
-    <number>1</number>
+    <number>0</number>
    </property>
    <widget class="QWidget" name="insertNamePage">
     <widget class="QPushButton" name="btn_joinChat">
      <property name="geometry">
       <rect>
-       <x>230</x>
+       <x>460</x>
        <y>350</y>
        <width>81</width>
        <height>31</height>
@@ -47,7 +47,7 @@
     <widget class="QLineEdit" name="led_insertName">
      <property name="geometry">
       <rect>
-       <x>140</x>
+       <x>370</x>
        <y>300</y>
        <width>261</width>
        <height>31</height>
@@ -57,7 +57,7 @@
     <widget class="QLabel" name="label">
      <property name="geometry">
       <rect>
-       <x>190</x>
+       <x>420</x>
        <y>240</y>
        <width>161</width>
        <height>41</height>
@@ -81,9 +81,9 @@
     <widget class="QLineEdit" name="led_sendMessage">
      <property name="geometry">
       <rect>
-       <x>40</x>
-       <y>510</y>
-       <width>381</width>
+       <x>36</x>
+       <y>630</y>
+       <width>861</width>
        <height>31</height>
       </rect>
      </property>
@@ -91,8 +91,8 @@
     <widget class="QPushButton" name="btn_sendMessage">
      <property name="geometry">
       <rect>
-       <x>424</x>
-       <y>510</y>
+       <x>900</x>
+       <y>630</y>
        <width>70</width>
        <height>31</height>
       </rect>
@@ -105,10 +105,16 @@
      <property name="geometry">
       <rect>
        <x>40</x>
-       <y>40</y>
+       <y>30</y>
        <width>161</width>
-       <height>31</height>
+       <height>41</height>
       </rect>
+     </property>
+     <property name="font">
+      <font>
+       <family>맑은 고딕</family>
+       <pointsize>12</pointsize>
+      </font>
      </property>
      <property name="text">
       <string>ooo님 반갑습니다</string>
@@ -120,23 +126,23 @@
     <widget class="QPushButton" name="btn_leaveChat">
      <property name="geometry">
       <rect>
-       <x>380</x>
+       <x>210</x>
        <y>30</y>
        <width>111</width>
        <height>41</height>
       </rect>
      </property>
      <property name="text">
-      <string>채팅방 나가기</string>
+      <string>나가기</string>
      </property>
     </widget>
     <widget class="QPushButton" name="pushButton">
      <property name="geometry">
       <rect>
-       <x>200</x>
-       <y>560</y>
-       <width>161</width>
-       <height>81</height>
+       <x>330</x>
+       <y>30</y>
+       <width>111</width>
+       <height>41</height>
       </rect>
      </property>
      <property name="text">
@@ -146,11 +152,122 @@
     <widget class="QListWidget" name="listwdg_chattingBox">
      <property name="geometry">
       <rect>
+       <x>36</x>
+       <y>420</y>
+       <width>931</width>
+       <height>201</height>
+      </rect>
+     </property>
+    </widget>
+    <widget class="QLabel" name="label_2">
+     <property name="geometry">
+      <rect>
+       <x>40</x>
+       <y>385</y>
+       <width>101</width>
+       <height>31</height>
+      </rect>
+     </property>
+     <property name="font">
+      <font>
+       <family>맑은 고딕</family>
+       <pointsize>11</pointsize>
+      </font>
+     </property>
+     <property name="text">
+      <string>전체 채팅</string>
+     </property>
+     <property name="alignment">
+      <set>Qt::AlignCenter</set>
+     </property>
+    </widget>
+    <widget class="QListWidget" name="listwdg_connectionPeople">
+     <property name="geometry">
+      <rect>
+       <x>40</x>
+       <y>110</y>
+       <width>181</width>
+       <height>271</height>
+      </rect>
+     </property>
+     <property name="editTriggers">
+      <set>QAbstractItemView::NoEditTriggers</set>
+     </property>
+     <property name="dragEnabled">
+      <bool>false</bool>
+     </property>
+     <property name="alternatingRowColors">
+      <bool>true</bool>
+     </property>
+     <property name="selectionMode">
+      <enum>QAbstractItemView::NoSelection</enum>
+     </property>
+    </widget>
+    <widget class="QStackedWidget" name="stackedWidget_2">
+     <property name="geometry">
+      <rect>
+       <x>249</x>
+       <y>109</y>
+       <width>711</width>
+       <height>291</height>
+      </rect>
+     </property>
+     <widget class="QWidget" name="page_3">
+      <widget class="QListWidget" name="listWidget">
+       <property name="geometry">
+        <rect>
+         <x>10</x>
+         <y>0</y>
+         <width>691</width>
+         <height>271</height>
+        </rect>
+       </property>
+      </widget>
+     </widget>
+     <widget class="QWidget" name="page_4"/>
+    </widget>
+    <widget class="QLabel" name="label_4">
+     <property name="geometry">
+      <rect>
        <x>40</x>
        <y>80</y>
-       <width>451</width>
-       <height>421</height>
+       <width>91</width>
+       <height>31</height>
       </rect>
+     </property>
+     <property name="font">
+      <font>
+       <family>맑은 고딕</family>
+       <pointsize>11</pointsize>
+      </font>
+     </property>
+     <property name="text">
+      <string>접속 인원</string>
+     </property>
+     <property name="alignment">
+      <set>Qt::AlignCenter</set>
+     </property>
+    </widget>
+    <widget class="QLabel" name="label_5">
+     <property name="geometry">
+      <rect>
+       <x>260</x>
+       <y>80</y>
+       <width>111</width>
+       <height>31</height>
+      </rect>
+     </property>
+     <property name="font">
+      <font>
+       <family>맑은 고딕</family>
+       <pointsize>11</pointsize>
+      </font>
+     </property>
+     <property name="text">
+      <string>팀별 채팅방</string>
+     </property>
+     <property name="alignment">
+      <set>Qt::AlignCenter</set>
      </property>
     </widget>
    </widget>
