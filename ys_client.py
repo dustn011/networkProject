@@ -71,62 +71,72 @@ class Client(QWidget, form_class):
 
     # 채팅방 나가기 메서드
     def method_leaveChattingRoom(self):
+        # 채팅방 퇴장 알림 전송 인덱스 0번에 식별자 'plzReceiveLeaveMainChat'넣어줌
+        leaveMainChat = ['plzReceiveLeaveMainChat', datetime.now().strftime('%D %T'), self.led_insertName.text()]
+
+        send_leaveMainChat = json.dumps(leaveMainChat)
+        self.client_socket.send(send_leaveMainChat.encode('utf-8'))
+
         self.led_insertName.clear()
         self.stackedWidget.setCurrentIndex(0)
 
     # 메시지를 받는 메서드 스레드로 실행
     def listen_thread(self):
         # 데이터 수신 thread를 생성하고 시작
-        t = Thread(target=self.receive_message, args=(self.client_socket,), daemon=True)
-        t.start()
+        self.receiveThr = Thread(target=self.receive_message, args=(self.client_socket,), daemon=True)
+        self.receiveThr.start()
 
-    # 스레드에서 실행되는 메시지 받기. 메서드 message_log[0]번으로 식별자 구분
+    # 스레드에서 실행되는 메시지 받기 메서드. identifier번으로 식별자 구분
     def receive_message(self, so):
         while True:
-            buf = so.recv(9999)
-            message_log = json.loads(buf.decode('utf-8'))
-            print(message_log)
-            time.sleep(0.1)
-            if not buf:     # 연결이 종료됨
+            try:
+                buf = so.recv(9999)
+            except:
+                print('연결 종료')
                 break
-            # 처음 입장했을 때 모든 채팅 내역 출력
-            elif message_log[0] == 'allChat_data':
-                message_log.pop(0)
-                a = 1
-                setting = ''
-                for i in range(len(message_log)):
-                    if a%3 != 0:
-                        setting += f"[{message_log[i]}] "
-                    else:
-                        self.listwdg_chattingBox.addItem(setting + '\n' + message_log[i] + '')
-                        setting = ''
-                        # 리스트 위젯 스크롤바 아래로 고정
-                        self.listwdg_chattingBox.scrollToBottom()
-                    a += 1
-            # 처음 입장했을 때 현재 접속 인원 출력
-            elif message_log[0] == 'allConnection_data':
-                message_log.pop(0)
-                for i in range(len(message_log)):
-                    self.listwdg_connectionPeople.addItem(message_log[i])
+            else:
+                message_log = json.loads(buf.decode('utf-8'))
+                identifier = message_log.pop(0)     # identifier = 식별자 -> 추출
+
+                if not buf:     # 연결이 종료됨
+                    break
+                # 처음 입장했을 때 모든 채팅 내역 출력
+                elif identifier == 'allChat_data':
+                    a = 1
+                    setting = ''
+                    for i in range(len(message_log)):
+                        if a%3 != 0:
+                            setting += f"[{message_log[i]}] "
+                        else:
+                            self.listwdg_chattingBox.addItem(setting + '\n' + message_log[i] + '')
+                            setting = ''
+                            # 리스트 위젯 스크롤바 아래로 고정
+                            self.listwdg_chattingBox.scrollToBottom()
+                        a += 1
+                # 처음 입장했을 때 현재 접속 인원 출력
+                elif identifier == 'allConnection_data':
+                    for i in range(len(message_log)):
+                        self.listwdg_connectionPeople.addItem(message_log[i])
+                        self.listwdg_connectionPeople.scrollToBottom()
+                # 다른 클라이언트에서 보낸 메세지 전체 메시지창에 출력
+                elif identifier == 'plzReceiveMessage':
+                    self.listwdg_chattingBox.addItem(message_log[0])
+                    # 리스트 위젯 스크롤바 아래로 고정
+                    self.listwdg_chattingBox.scrollToBottom()
+                # 다른 클라이언트에서 입장한 알림 전체 메시지창에 출력, 입장한 사람들 리스트에 넣어주기
+                elif identifier == 'plzReceiveAlarm':
+                    self.listwdg_chattingBox.addItem(message_log[0])
+                    self.listwdg_connectionPeople.addItem(message_log[1])
+                    # 리스트 위젯 스크롤바 아래로 고정
+                    self.listwdg_chattingBox.scrollToBottom()
                     self.listwdg_connectionPeople.scrollToBottom()
-            # 다른 클라이언트에서 보낸 메세지 전체 메시지창에 출력
-            elif message_log[0] == 'plzReceiveMessage':
-                message_log.pop(0)
-                self.listwdg_chattingBox.addItem(message_log[0])
-                # 리스트 위젯 스크롤바 아래로 고정
-                self.listwdg_chattingBox.scrollToBottom()
-            # 다른 클라이언트에서 입장한 알림 전체 메시지창에 출력, 입장한 사람들 리스트에 넣어주기
-            elif message_log[0] == 'plzReceiveAlarm':
-                message_log.pop(0)
-                self.listwdg_chattingBox.addItem(message_log[0])
-                self.listwdg_connectionPeople.addItem(message_log[1])
-                # 리스트 위젯 스크롤바 아래로 고정
-                self.listwdg_chattingBox.scrollToBottom()
-                self.listwdg_connectionPeople.scrollToBottom()
+                elif identifier == 'plzReceiveLeaveMessage':
+                    print(message_log[0])
+                    self.listwdg_chattingBox.addItem(message_log[0])
+                    # 리스트 위젯 스크롤바 아래로 고정
+                    self.listwdg_chattingBox.scrollToBottom()
 
-
-        so.close()
-
+                    # 접속 인원도 ui에서 없애주기
     # 메시지 보내기 메서드
     def method_sendMessage(self):
         sender_name = self.led_insertName.text()
@@ -144,6 +154,28 @@ class Client(QWidget, form_class):
 
         # 리스트 위젯 스크롤바 아래로 고정
         self.listwdg_chattingBox.scrollToBottom()
+
+    # 유저가 종료했을 경우 (함수를 따로 실행 안해도 종료하면 알아서 실행됨)
+    def closeEvent(self, QCloseEvent):
+        # 서버에 소켓을 닫는다고 시그널 보냄
+        exitsocketsignal = ['byebye']
+        send_exitsocketsignal = json.dumps(exitsocketsignal)  # json.dumps로 리스트의 값들 바이트형으로 바꿔줌
+        self.client_socket.send(send_exitsocketsignal.encode('utf-8'))  # 연결된 소켓(서버)에 채팅 로그 데이터 보내줌
+        print(self.client_socket)
+        self.client_socket.close()
+    #     self.receiveThr.join()
+        # 채팅방에서는 종료를 못시키게함
+        # if self.stackedWidget.currentIndex() == 2:
+        #     QCloseEvent.ignore()  # 이벤트가 발생해도 무시함
+        # 채팅방이 아닌 경우에서는 종료시켜야함
+        # else:
+        #     self.Thread_exit = True
+        #     close_msg = (f"{self.login_user_id}/!&%*|CLOSE|*%&!").encode()
+        #     print('exit')
+        #     self.client_socket.send(close_msg)
+        #     print(close_msg)
+        #     self.client_socket.close()
+        #     QCloseEvent.accept()  # 이건 종료시켜라
 
 
 if __name__ == "__main__":
