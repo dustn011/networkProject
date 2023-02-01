@@ -58,7 +58,7 @@ class Client(QWidget, form_class):
         else:
             self.lbl_wellcome.setText(f'{self.led_insertName.text()}님 환영합니다')
             self.listwdg_connectionPeople.addItem(self.led_insertName.text())
-            self.listwdg_chattingBox.addItem(f"\n<<< [{datetime.now().strftime('%D %T')}] [{self.led_insertName.text()}] 님이 채팅방에 입장하셨습니다 >>> \n")
+            self.listwdg_chattingBox.addItem(f"\n<<< [{datetime.now().strftime('%D %T')}] [{self.led_insertName.text()}] 님이 채팅방에 입장하셨습니다 >>>")
             # 리스트 위젯 스크롤바 아래로 고정
             self.listwdg_chattingBox.scrollToBottom()
             self.listwdg_connectionPeople.scrollToBottom()
@@ -115,6 +115,7 @@ class Client(QWidget, form_class):
                         a += 1
                 # 처음 입장했을 때 현재 접속 인원 출력
                 elif identifier == 'allConnection_data':
+                    self.listwdg_connectionPeople.clear()
                     for i in range(len(message_log)):
                         self.listwdg_connectionPeople.addItem(message_log[i])
                         self.listwdg_connectionPeople.scrollToBottom()
@@ -131,7 +132,6 @@ class Client(QWidget, form_class):
                     self.listwdg_chattingBox.scrollToBottom()
                     self.listwdg_connectionPeople.scrollToBottom()
                 elif identifier == 'plzReceiveLeaveMessage':
-                    print(message_log[0])
                     self.listwdg_chattingBox.addItem(message_log[0])
                     # 리스트 위젯 스크롤바 아래로 고정
                     self.listwdg_chattingBox.scrollToBottom()

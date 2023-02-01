@@ -123,21 +123,20 @@ class MultiChatServer:
                     self.sendLeaveMessage(c_socket)
         c_socket.close()
 
-    # 모든 클라이언트로 퇴장 메시지 보내기
+    # 모든 클라이언트로 퇴장 알람 보내기
     def sendLeaveMessage(self, senders_socket):
-        print('안녕히계세요')
         leaveMessage = ['plzReceiveLeaveMessage',
-                   f"\n<<< [{self.recived_message[1]}] [{self.recived_message[2]}] 님이 채팅방에서 나가셨습니다 >>>\n"]
+                        f"\n<<< [{self.recived_message[1]}] [{self.recived_message[2]}] 님이 채팅방에서 나가셨습니다 >>>"]
         sendall_leaveMessage = json.dumps(leaveMessage)
         for client in self.clients:  # 목록에 있는 모든 소켓에 대해
             socket, (ip, port) = client
-            if socket is not senders_socket:  # 송신 클라이언트는 제외
-                try:
-                    socket.sendall(sendall_leaveMessage.encode())
-                except:  # 메시지가 전송되지 않으면 연결 종료된 소켓이므로 지워준다
-                    self.clients.remove(client)  # 소켓 제거
-                    print(f"{datetime.now().strftime('%D %T')}, {ip}, {port} 연결이 종료되었습니다")
-            elif socket is senders_socket:
+            try:
+                socket.sendall(sendall_leaveMessage.encode())
+            except:  # 메시지가 전송되지 않으면 연결 종료된 소켓이므로 지워준다
+                self.clients.remove(client)  # 소켓 제거
+                print(f"{datetime.now().strftime('%D %T')}, {ip}, {port} 연결이 종료되었습니다")
+
+            if socket is senders_socket:
                 # DB 열기
                 leave_data = pymysql.connect(host='10.10.21.102', user='lilac', password='0000', db='network_project',
                                             charset='utf8')
@@ -158,6 +157,18 @@ class MultiChatServer:
                 leave_data.commit()
                 # DB 닫아주기
                 leave_data.close()
+
+        list_connection_info = self.method_getAllConnection()
+        setdata = json.dumps(list_connection_info)  # json.dumps로 리스트의 값들 바이트형으로 바꿔줌
+
+        for client in self.clients:  # 목록에 있는 모든 소켓에 대해
+            socket, (ip, port) = client
+            try:
+                socket.sendall(setdata.encode())
+            except:  # 메시지가 전송되지 않으면 연결 종료된 소켓이므로 지워준다
+                self.clients.remove(client)  # 소켓 제거
+                print(f"{datetime.now().strftime('%D %T')}, {ip}, {port} 연결이 종료되었습니다")
+
 
     # 모든 클라이언트로 메시지 보내기
     def sendMessage_all_clients(self, senders_socket):
@@ -189,10 +200,10 @@ class MultiChatServer:
                 # DB 닫아주기
                 chat_data.close()
 
-    # 모든 클라이언트로 알람 보내기
+    # 모든 클라이언트로 입장 알람 보내기
     def sendAlarm_all_clients(self, senders_socket):
         alarm = ['plzReceiveAlarm',
-                 f"\n<<< [{self.recived_message[1]}] [{self.recived_message[2]}] 님이 채팅방에 입장하셨습니다 >>>\n",
+                 f"\n<<< [{self.recived_message[1]}] [{self.recived_message[2]}] 님이 채팅방에 입장하셨습니다 >>>",
                  self.recived_message[2]]
         sendall_Alarm = json.dumps(alarm)
         for client in self.clients:  # 목록에 있는 모든 소켓에 대해
