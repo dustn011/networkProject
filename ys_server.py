@@ -23,6 +23,64 @@ class MultiChatServer:
         self.s_sock.listen(2)
         self.accept_client()
 
+        self.connectedMember = []       # 현재 접속한 사람 리스트
+
+    # 모든 채팅 DB에서 가져오기
+    def method_getAllChat(self):
+        chat_alldata = pymysql.connect(host='10.10.21.102', user='lilac', password='0000', db='network_project',
+                                       charset='utf8')
+        # DB와 상호작용하기 위해 연결해주는 cursor 객체 만듬
+        all_chat = chat_alldata.cursor()
+
+        # 채팅 로그를 불러와줘
+        sql = f"SELECT * FROM chat"
+
+        # execute 메서드로 db에 sql 문장 전송
+        all_chat.execute(sql)
+
+        chat_info = all_chat.fetchall()
+
+        # DB 닫아주기
+        chat_alldata.close()
+
+        list_chat_info = ['allChat_data']
+
+        # DB에서 가져온 튜플 리스트화
+        for i in range(len(chat_info)):
+            for j in range(len(chat_info[i])):
+                if type(chat_info[i][j]) == datetime:
+                    list_chat_info.append(chat_info[i][j].strftime('%D %T'))
+                else:
+                    list_chat_info.append(chat_info[i][j])
+
+        return list_chat_info
+
+    # 모든 접속 멤버 가져오기
+    def method_getAllConnection(self):
+        chat_allconnection = pymysql.connect(host='10.10.21.102', user='lilac', password='0000', db='network_project',
+                                       charset='utf8')
+        # DB와 상호작용하기 위해 연결해주는 cursor 객체 만듬
+        all_connection = chat_allconnection.cursor()
+        # 접속 멤버 로그를 불러와줘
+        sql = f"SELECT connection_person FROM connection WHERE connection_stat = '입장'"
+
+        # execute 메서드로 db에 sql 문장 전송
+        all_connection.execute(sql)
+
+        connection_data = all_connection.fetchall()
+
+        # DB 닫아주기
+        chat_allconnection.close()
+
+        list_connection_info = ['allConnection_data']
+
+        # DB에서 가져온 튜플 리스트화
+        for i in range(len(connection_data)):
+            for j in range(len(connection_data[i])):
+                list_connection_info.append(connection_data[i][j])
+
+        return list_connection_info
+
     # 연결 클라이언트 소켓을 목록에 추가하고 스레드를 생성하여 데이터를 수신한다
     def accept_client(self):
         while True:
@@ -30,33 +88,13 @@ class MultiChatServer:
             if client not in self.clients:
                 self.clients.append(client)  # 접속된 소켓을 목록에 추가
 
-                # DB를 열고 로그인한 계정으로 보낸 메세지
-                chat_alldata = pymysql.connect(host='10.10.21.102', user='lilac', password='0000', db='network_project',
-                                               charset='utf8')
-                # DB와 상호작용하기 위해 연결해주는 cursor 객체 만듬
-                all_chat = chat_alldata.cursor()
-
-                # 오늘 로그인한 사람의 출석 상황을 보고싶어
-                sql = f"SELECT * FROM chat"
-
-                # execute 메서드로 db에 sql 문장 전송
-                all_chat.execute(sql)
-
-                chat_info = all_chat.fetchall()
-                # DB 닫아주기
-                chat_alldata.close()
-                list_chat_info = []
-
-                # DB에서 가져온 튜플 리스트화
-                for i in range(len(chat_info)):
-                    for j in range(len(chat_info[i])):
-                        if type(chat_info[i][j]) == datetime:
-                            list_chat_info.append(chat_info[i][j].strftime('%D %T'))
-                        else:
-                            list_chat_info.append(chat_info[i][j])
-
+                list_chat_info = self.method_getAllChat()   # 모든 채팅 DB에서 가져오기
                 setdata = json.dumps(list_chat_info)        # json.dumps로 리스트의 값들 바이트형으로 바꿔줌
                 c_socket.send(setdata.encode())             # 연결된 소켓에 채팅 로그 데이터 보내줌
+
+                list_connection_info = self.method_getAllConnection()   # 모든 접속자 DB에서 가져오기
+                setdata = json.dumps(list_connection_info)              # json.dumps로 리스트의 값들 바이트형으로 바꿔줌
+                c_socket.send(setdata.encode())                         # 연결된 소켓에 채팅 로그 데이터 보내줌
 
             print(datetime.now().strftime('%D %T'), '주소:', ip, ' 포트번호:', str(port), '가 연결되었습니다')
 
@@ -74,45 +112,18 @@ class MultiChatServer:
                 continue
             else:
                 self.recived_message = json.loads(incoming_message.decode('utf-8'))
-                if len(self.recived_message) > 2:
+                print(self.recived_message)
+                if self.recived_message[0] == 'plzReceiveMessage':
                     self.sendMessage_all_clients(c_socket)      # 열려있는 모든 클라이언트들에게 메세지 보내기
-                    # DB 열기
-                    chat_data = pymysql.connect(host='10.10.21.102', user='lilac', password='0000', db='network_project',
-                                                charset='utf8')
-                    # DB와 상호작용하기 위해 연결해주는 cursor 객체 만듬
-                    chat_db = chat_data.cursor()
-
-                    # insert문 넣어주기
-                    insert_sql = f"INSERT INTO chat VALUES (now(), '{self.recived_message[1]}', '{self.recived_message[2]}')"
-
-                    # execute 메서드로 db에 sql 문장 전송
-                    chat_db.execute(insert_sql)
-                    # insert문 실행
-                    chat_data.commit()
-                    # DB 닫아주기
-                    chat_data.close()
-                else:
-                    self.sendAlarm_all_clients(c_socket)      # 열려있는 모든 클라이언트들에게 알림 보내기
-
+                elif self.recived_message[0] == 'plzReceiveAlarm':
+                    self.sendAlarm_all_clients(c_socket)        # 열려있는 모든 클라이언트들에게 알림 보내기
         c_socket.close()
 
-    # 알람 보내기
-    def sendAlarm_all_clients(self, senders_socket):
-        sendall_Alarm = f"\n<<< [{self.recived_message[0]}] [{self.recived_message[1]}] 님이 채팅방에 입장하셨습니다 >>> \n"
-
-        for client in self.clients:  # 목록에 있는 모든 소켓에 대해
-            socket, (ip, port) = client
-            if socket is not senders_socket:  # 송신 클라이언트는 제외
-                try:
-                    socket.sendall(sendall_Alarm.encode())
-                except:  # 연결 종료
-                    self.clients.remove(client)  # 소켓 제거
-                    print(f"{datetime.now().strftime('%D %T')}, {ip}, {port} 연결이 종료되었습니다")
-
-    # 메시지 보내기
+    # 모든 클라이언트로 메시지 보내기
     def sendMessage_all_clients(self, senders_socket):
-        sendall_message = f"[{self.recived_message[0]}] [{self.recived_message[1]}]\n{self.recived_message[2]}"
-
+        message = ['plzReceiveMessage',
+                   f"[{self.recived_message[1]}] [{self.recived_message[2]}]\n{self.recived_message[3]}"]
+        sendall_message = json.dumps(message)
         for client in self.clients:     # 목록에 있는 모든 소켓에 대해
             socket, (ip, port) = client
             if socket is not senders_socket:    # 송신 클라이언트는 제외
@@ -121,6 +132,53 @@ class MultiChatServer:
                 except:     # 메시지가 전송되지 않으면 연결 종료된 소켓이므로 지워준다
                     self.clients.remove(client)     # 소켓 제거
                     print(f"{datetime.now().strftime('%D %T')}, {ip}, {port} 연결이 종료되었습니다")
+
+        # DB 열기
+        chat_data = pymysql.connect(host='10.10.21.102', user='lilac', password='0000', db='network_project',
+                                    charset='utf8')
+        # DB와 상호작용하기 위해 연결해주는 cursor 객체 만듬
+        chat_db = chat_data.cursor()
+
+        # insert문 넣어주기(언제몇시몇분에 누가 채팅을 쳤습니다)
+        insert_sql = f"INSERT INTO chat VALUES (now(), '{self.recived_message[2]}', '{self.recived_message[3]}')"
+
+        # execute 메서드로 db에 sql 문장 전송
+        chat_db.execute(insert_sql)
+        # insert문 실행
+        chat_data.commit()
+        # DB 닫아주기
+        chat_data.close()
+
+    # 모든 클라이언트로 알람 보내기
+    def sendAlarm_all_clients(self, senders_socket):
+        alarm = ['plzReceiveAlarm',
+                 f"\n<<< [{self.recived_message[1]}] [{self.recived_message[2]}] 님이 채팅방에 입장하셨습니다 >>>\n",
+                 self.recived_message[2]]
+        sendall_Alarm = json.dumps(alarm)
+        for client in self.clients:  # 목록에 있는 모든 소켓에 대해
+            socket, (ip, port) = client
+            if socket is not senders_socket:  # 송신 클라이언트는 제외
+                try:
+                    socket.sendall(sendall_Alarm.encode())      # 연결된 소켓(클라이언트)에 알람 데이터 보내줌
+                except:  # 연결 종료
+                    self.clients.remove(client)  # 소켓 제거
+                    print(f"{datetime.now().strftime('%D %T')}, {ip}, {port} 연결이 종료되었습니다")
+        # DB 열기
+        chat_data = pymysql.connect(host='10.10.21.102', user='lilac', password='0000',
+                                    db='network_project',
+                                    charset='utf8')
+        # DB와 상호작용하기 위해 연결해주는 cursor 객체 만듬
+        chat_db = chat_data.cursor()
+
+        # insert문 넣어주기(언제몇시몇분에 누가 입장했습니다)
+        insert_sql = f"INSERT INTO connection VALUES (now(), '{self.recived_message[2]}', '입장')"
+
+        # execute 메서드로 db에 sql 문장 전송
+        chat_db.execute(insert_sql)
+        # insert문 실행
+        chat_data.commit()
+        # DB 닫아주기
+        chat_data.close()
 
 
 if __name__ == "__main__":
