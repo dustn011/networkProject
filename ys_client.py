@@ -157,6 +157,7 @@ class Client(QWidget, form_class):
 
     # 유저가 종료했을 경우 (함수를 따로 실행 안해도 종료하면 알아서 실행됨)
     def closeEvent(self, QCloseEvent):
+        self.method_leaveChattingRoom()
         # 서버에 소켓을 닫는다고 시그널 보냄
         exitsocketsignal = ['byebye']
         send_exitsocketsignal = json.dumps(exitsocketsignal)  # json.dumps로 리스트의 값들 바이트형으로 바꿔줌
