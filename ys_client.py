@@ -58,7 +58,7 @@ class Client(QWidget, form_class):
         else:
             self.lbl_wellcome.setText(f'{self.led_insertName.text()}님 환영합니다')
             self.listwdg_connectionPeople.addItem(self.led_insertName.text())
-            self.listwdg_chattingBox.addItem(f"[{datetime.now().strftime('%D %T')}] [🐶링컨이🐶]\n{self.led_insertName.text()}님이 채팅방에 입장하셨습니다")
+            self.listwdg_chattingBox.addItem(f"[{datetime.now().strftime('%D %T')}] [★링컨이★]\n{self.led_insertName.text()}님이 채팅방에 입장하셨습니다!")
 
             # 리스트 위젯 스크롤바 아래로 고정
             self.listwdg_chattingBox.scrollToBottom()
@@ -132,11 +132,18 @@ class Client(QWidget, form_class):
                         self.listwdg_connectionPeople.scrollToBottom()
                 # 다른 클라이언트에서 보낸 메세지 전체 메시지창에 출력
                 elif identifier == 'plzReceiveMessage':
+                    print('0000000000000000000000000000001')
+                    print(message_log)
+                    print('1111111111111111111111111111111')
                     self.listwdg_chattingBox.addItem(message_log[0])
                     # 리스트 위젯 스크롤바 아래로 고정
                     self.listwdg_chattingBox.scrollToBottom()
                 # 다른 클라이언트에서 입장한 알림 전체 메시지창에 출력, 입장한 사람들 리스트에 넣어주기
                 elif identifier == 'plzReceiveAlarm':
+                    print('0000000000000000000000000000001')
+                    print(message_log)
+                    print('1111111111111111111111111111111')
+
                     self.listwdg_chattingBox.addItem(message_log[0])
                     self.listwdg_connectionPeople.addItem(message_log[1])
                     # 리스트 위젯 스크롤바 아래로 고정
