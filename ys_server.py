@@ -8,7 +8,6 @@ import json
 
 
 class MultiChatServer:
-
     # 소켓을 생성하고 연결되면 accept_client() 호출
     def __init__(self):
         self.clients = []                   # 접속된 클라이언트 소켓 목록을 넣을 리스트
@@ -167,8 +166,7 @@ class MultiChatServer:
                 socket.sendall(setdata.encode())
             except:  # 메시지가 전송되지 않으면 연결 종료된 소켓이므로 지워준다
                 self.clients.remove(client)  # 소켓 제거
-                print(f"{datetime.now().strftime('%D %T')}, {ip}, {port} 연결이 종료되었습니다")
-
+                print(f"{datetime.now().strftime('%D %T')}, 주소: {ip}, 포트번호: {port} 연결이 종료되었습니다")
 
     # 모든 클라이언트로 메시지 보내기
     def sendMessage_all_clients(self, senders_socket):

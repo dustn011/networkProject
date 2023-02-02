@@ -164,19 +164,6 @@ class Client(QWidget, form_class):
         self.client_socket.send(send_exitsocketsignal.encode('utf-8'))  # 연결된 소켓(서버)에 채팅 로그 데이터 보내줌
         print(self.client_socket)
         self.client_socket.close()
-    #     self.receiveThr.join()
-        # 채팅방에서는 종료를 못시키게함
-        # if self.stackedWidget.currentIndex() == 2:
-        #     QCloseEvent.ignore()  # 이벤트가 발생해도 무시함
-        # 채팅방이 아닌 경우에서는 종료시켜야함
-        # else:
-        #     self.Thread_exit = True
-        #     close_msg = (f"{self.login_user_id}/!&%*|CLOSE|*%&!").encode()
-        #     print('exit')
-        #     self.client_socket.send(close_msg)
-        #     print(close_msg)
-        #     self.client_socket.close()
-        #     QCloseEvent.accept()  # 이건 종료시켜라
 
 
 if __name__ == "__main__":
