@@ -51,7 +51,6 @@ class MultiChatServer:
                     list_chat_info.append(chat_info[i][j].strftime('%D %T'))
                 else:
                     list_chat_info.append(chat_info[i][j])
-
         return list_chat_info
 
     # 모든 접속 멤버 가져오기
@@ -108,7 +107,7 @@ class MultiChatServer:
                 if not incoming_message:    # 연결이 종료됨
                     break
             except:
-                continue
+                pass
             else:
                 self.recived_message = json.loads(incoming_message.decode('utf-8'))
                 # print(self.recived_message)
@@ -116,48 +115,105 @@ class MultiChatServer:
                     self.sendMessage_all_clients(c_socket)      # 열려있는 모든 클라이언트들에게 메세지 보내기
                 elif self.recived_message[0] == 'plzReceiveAlarm':
                     self.sendAlarm_all_clients(c_socket)        # 열려있는 모든 클라이언트들에게 알림 보내기
-                elif self.recived_message[0] ==  'byebye':
-                    self.disconnect_socket(c_socket)            # 소켓 연결 끊기
-                elif self.recived_message[0] == 'plzReceiveLeaveMainChat':
-                    self.sendLeaveMessage(c_socket)
+                elif self.recived_message[0] == 'plzSendAllThatImGone':
+                    self.sendLeaveMessage(c_socket)             # 다른 클라이언트들에게 접속한 사람 연결 종료 알림 보내기
+                    self.method_disconnectClient(c_socket)      # DB에 접속한 사람 연결 종료 데이터 보내기
+                elif self.recived_message[0] == 'plzDisconnectSocket':
+                    self.disconnect_socket(c_socket)            # 클라이언트 종료하면 소켓 연결 끊기
         c_socket.close()
+
+    # 클라이언트에서 연결 끊는다고 시그널 보내면 소켓 리스트에서 해당 클라이언트 연결 소켓 지움
+    def disconnect_socket(self, senders_socket):
+        for client in self.clients:
+            socket, (ip, port) = client
+            if socket is senders_socket:
+                self.clients.remove(client)  # 전체 클라이언트 소켓 리스트에서 해당 소켓 제거
+                socket.close()
+                print(f"{datetime.now().strftime('%D %T')}, 주소: {ip}, 포트번호: {port} 연결이 종료되었습니다")
 
     # 모든 클라이언트로 퇴장 알람 보내기
     def sendLeaveMessage(self, senders_socket):
-        leaveMessage = ['plzReceiveLeaveMessage',
-                        f"\n<<< [{self.recived_message[1]}] [{self.recived_message[2]}] 님이 채팅방에서 나가셨습니다 >>>"]
-        sendall_leaveMessage = json.dumps(leaveMessage)
+        leaveMessage = f"[{self.recived_message[1]}] [★링컨이★]\n{self.recived_message[2]}님이 채팅방에서 나가셨습니다"
+        lincolnMessage = f"{self.recived_message[2]}님이 채팅방에서 나가셨습니다"
+        alarmLeaveMessage = ['plzReceiveLeaveMessage', leaveMessage]
+
+        sendall_leaveMessage = json.dumps(alarmLeaveMessage)
         for client in self.clients:  # 목록에 있는 모든 소켓에 대해
             socket, (ip, port) = client
-            try:
-                socket.sendall(sendall_leaveMessage.encode())
-            except:  # 메시지가 전송되지 않으면 연결 종료된 소켓이므로 지워준다
-                self.clients.remove(client)  # 소켓 제거
-                print(f"{datetime.now().strftime('%D %T')}, {ip}, {port} 연결이 종료되었습니다")
+            if socket is not senders_socket:
+                try:
+                    socket.sendall(sendall_leaveMessage.encode())
+                except:  # 메시지가 전송되지 않으면 연결 종료된 소켓이므로 지워준다
+                    self.clients.remove(client)  # 소켓 제거
+                    print(f"{datetime.now().strftime('%D %T')}, {ip}, {port} 연결이 종료되었습니다")
 
+    # 모든 클라이언트로 입장 알람 보내기
+    def sendAlarm_all_clients(self, senders_socket):
+        alarmMessage = f"[{self.recived_message[1]}] [★링컨이★]\n{self.recived_message[2]}님이 채팅방에 입장하셨습니다!"
+        lincolnMessage = f"{self.recived_message[2]}님이 채팅방에 입장하셨습니다!"
+        alarm = ['plzReceiveAlarm', alarmMessage, self.recived_message[2]]
+
+        sendall_Alarm = json.dumps(alarm)
+        for client in self.clients:  # 목록에 있는 모든 소켓에 대해
+            socket, (ip, port) = client
+            if socket is not senders_socket:  # 송신 클라이언트는 제외
+                try:
+                    socket.sendall(sendall_Alarm.encode())      # 연결된 소켓(클라이언트)에 알람 데이터 보내줌
+                except:  # 연결 종료
+                    self.clients.remove(client)  # 소켓 제거
+                    print(f"{datetime.now().strftime('%D %T')}, {ip}, {port} 연결이 종료되었습니다")
+            elif socket is senders_socket:
+                # DB 열기
+                chat_data = pymysql.connect(host='10.10.21.102', user='lilac', password='0000',
+                                            db='network_project',
+                                            charset='utf8')
+                # DB와 상호작용하기 위해 연결해주는 cursor 객체 만듬
+                chat_db = chat_data.cursor()
+
+                # insert문 넣어주기(언제몇시몇분에 ip주소와 port번호가 무엇인 누군가가 입장했습니다)
+                insertChatLog_sql = f"INSERT INTO allchatting_log VALUES (now(), '★링컨이★', '{lincolnMessage}', 'manager', 'manager');"
+                insertLog_sql = f"INSERT INTO connection_log VALUES (now(), '{self.recived_message[2]}', '입장', '{ip}', '{port}');"
+                insertStat_sql = f"INSERT INTO connection_stat VALUES ('{self.recived_message[2]}', '{ip}', '{port}');"
+
+                # execute 메서드로 db에 sql 문장 전송,,, 프로시저로 만들 수 있을텐데...
+                chat_db.execute(insertChatLog_sql)
+                chat_db.execute(insertLog_sql)
+                chat_db.execute(insertStat_sql)
+
+                # insert문 실행
+                chat_data.commit()
+                # DB 닫아주기
+                chat_data.close()
+
+    # DB에 연결 종료 데이터 보내는 메서드
+    def method_disconnectClient(self, senders_socket):
+        lincolnMessage = f"{self.recived_message[2]}님이 채팅방에서 나가셨습니다"
+
+        for client in self.clients:  # 목록에 있는 모든 소켓에 대해
+            socket, (ip, port) = client
             if socket is senders_socket:
                 # DB 열기
                 leave_data = pymysql.connect(host='10.10.21.102', user='lilac', password='0000', db='network_project',
-                                            charset='utf8')
+                                             charset='utf8')
                 # DB와 상호작용하기 위해 연결해주는 cursor 객체 만듬
                 chat_db = leave_data.cursor()
 
                 # insert문 넣어주기(언제몇시몇분에 ip주소와 port번호가 무엇인 누군가가 퇴장했습니다)
+                insertChatLog_sql = f"INSERT INTO allchatting_log VALUES (now(), '★링컨이★', '{lincolnMessage}', 'manager', 'manager');"
                 insert_sql = f"INSERT INTO connection_log VALUES (now(), '{self.recived_message[2]}', '퇴장', '{ip}', '{port}')"
                 # delete문으로 현재 접속 인원 지워버리기
                 update_sql = f"DELETE FROM connection_stat WHERE connection_person = '{self.recived_message[2]}' AND ip = '{ip}' AND port = '{port}'"
 
-                # execute 메서드로 db에 insertSql 문장 전송
+                # execute 메서드로 db에 Sql 문장 전송
+                chat_db.execute(insertChatLog_sql)
                 chat_db.execute(insert_sql)
-                # execute 메서드로 db에 updateSql 문장 전송
                 chat_db.execute(update_sql)
-
                 # insert문 실행
                 leave_data.commit()
                 # DB 닫아주기
                 leave_data.close()
 
-        list_connection_info = self.method_getAllConnection()
+        list_connection_info = self.method_getAllConnection()       # 접속자 리스트 다시 불러오기
         setdata = json.dumps(list_connection_info)  # json.dumps로 리스트의 값들 바이트형으로 바꿔줌
 
         for client in self.clients:  # 목록에 있는 모든 소켓에 대해
@@ -197,50 +253,6 @@ class MultiChatServer:
                 chat_data.commit()
                 # DB 닫아주기
                 chat_data.close()
-
-    # 모든 클라이언트로 입장 알람 보내기
-    def sendAlarm_all_clients(self, senders_socket):
-        alarm = ['plzReceiveAlarm',
-                 f"\n<<< [{self.recived_message[1]}] [{self.recived_message[2]}] 님이 채팅방에 입장하셨습니다 >>>",
-                 self.recived_message[2]]
-        sendall_Alarm = json.dumps(alarm)
-        for client in self.clients:  # 목록에 있는 모든 소켓에 대해
-            socket, (ip, port) = client
-            if socket is not senders_socket:  # 송신 클라이언트는 제외
-                try:
-                    socket.sendall(sendall_Alarm.encode())      # 연결된 소켓(클라이언트)에 알람 데이터 보내줌
-                except:  # 연결 종료
-                    self.clients.remove(client)  # 소켓 제거
-                    print(f"{datetime.now().strftime('%D %T')}, {ip}, {port} 연결이 종료되었습니다")
-            elif socket is senders_socket:
-                # DB 열기
-                chat_data = pymysql.connect(host='10.10.21.102', user='lilac', password='0000',
-                                            db='network_project',
-                                            charset='utf8')
-                # DB와 상호작용하기 위해 연결해주는 cursor 객체 만듬
-                chat_db = chat_data.cursor()
-
-                # insert문 넣어주기(언제몇시몇분에 ip주소와 port번호가 무엇인 누군가가 입장했습니다)
-                insertLog_sql = f"INSERT INTO connection_log VALUES (now(), '{self.recived_message[2]}', '입장', '{ip}', '{port}')"
-                insertStat_sql = f"INSERT INTO connection_stat VALUES ('{self.recived_message[2]}', '{ip}', '{port}')"
-
-                # execute 메서드로 db에 sql 문장 전송
-                chat_db.execute(insertLog_sql)
-                chat_db.execute(insertStat_sql)
-
-                # insert문 실행
-                chat_data.commit()
-                # DB 닫아주기
-                chat_data.close()
-
-    # 클라이언트에서 연결 끊는다고 시그널 보내면 소켓 리스트에서 해당 클라이언트 연결 소켓 지움
-    def disconnect_socket(self, senders_socket):
-        for client in self.clients:
-            socket, (ip, port) = client
-            if socket is senders_socket:
-                self.clients.remove(client)  # 전체 클라이언트 소켓 리스트에서 해당 소켓 제거
-                socket.close()
-                print(f"{datetime.now().strftime('%D %T')}, 주소: {ip}, 포트번호: {port} 연결이 종료되었습니다")
 
 
 if __name__ == "__main__":
