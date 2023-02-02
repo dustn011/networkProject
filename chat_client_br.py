@@ -93,9 +93,10 @@ class Client(QWidget, form_class):
     def receive_message(self, so):
         while True:
             buf = so.recv(9999)
+            print(buf.decode('utf-8'))
             message_log = json.loads(buf.decode('utf-8'))
             print(message_log)
-            time.sleep(0.1)
+            print('1111111111111111111111111111111111111')
             if not buf:     # 연결이 종료됨
                 break
             # 처음 입장했을 때 모든 채팅 내역 출력
@@ -138,8 +139,25 @@ class Client(QWidget, form_class):
             elif message_log[0] == 'plzReceiveNewchat':
                 message_log.pop(0)
                 for i in range(len(message_log)):
+                    self.listwdg_teamChatChattingBox.addItem(message_log[i])
+                    self.listwdg_teamChatChattingBox.scrollToBottom()
+
+                # 다른 클라이언트 채팅방목록 보여주기
+            elif message_log[0] == 'allNewChat_data':
+                message_log.pop(0)
+
+                for i in range(len(message_log)):
                     self.listwdg_teamChat.addItem(message_log[i])
                     self.listwdg_teamChat.scrollToBottom()
+
+            # 새로운 채팅내용
+            elif message_log[0] == 'allNewChatroom_data':
+                message_log.pop(0)
+
+                for i in range(len(message_log)):
+                    self.listwdg_teamChatChattingBox.addItem(message_log[i])
+                    self.listwdg_teamChatChattingBox.scrollToBottom()
+
 
         so.close()
 
@@ -179,9 +197,17 @@ class Client(QWidget, form_class):
         # 신규채팅방으로 이동
         self.stcwdg_teamchatting.setCurrentIndex(1)
         self.label_teamChatName.setText(self.listwdg_teamChat.currentItem().text())
+        text = self.listwdg_teamChat.currentItem().text()
+        send_newchatNamelist = ['plzReceiveNewchatName', text]
+        send_newchatName = json.dumps(send_newchatNamelist)
+        self.client_socket.send(send_newchatName.encode('utf-8'))
+
+
+
 
     def outchat(self):
         self.stcwdg_teamchatting.setCurrentIndex(0)
+        self.listwdg_teamChatChattingBox.clear()
 
     def newSend(self):
         sender_name = self.led_insertName.text()
@@ -195,7 +221,7 @@ class Client(QWidget, form_class):
         self.client_socket.send(setNewMessageData.encode('utf-8'))  # 연결된 소켓(서버)에 채팅 로그 데이터 보내줌
 
         # 리스트 위젯에 작성한 글 append해줌
-        self.listwdg_teamChatChattingBox.addItem(f"[{message_datetime}] [{sender_name}]\n{message}")
+        self.listwdg_teamChatChattingBox.addItem(f"[{message_datetime}] [{sender_name}]\n[{message}]")
         self.led_teamChatSendMessage.clear()  # 작성한 글은 전송 후 ui에서 지워줌
 
         # 리스트 위젯 스크롤바 아래로 고정
