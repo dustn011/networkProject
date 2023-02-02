@@ -151,13 +151,12 @@ class Client(QWidget, form_class):
                     self.listwdg_teamChat.scrollToBottom()
 
             # 새로운 채팅내용
-            elif message_log[0] == 'allNewChatroom_data':
+            elif message_log[0] == '지난메세지':
                 message_log.pop(0)
-
-                for i in range(len(message_log)):
-                    self.listwdg_teamChatChattingBox.addItem(message_log[i])
+                print(message_log)
+                for i in range(0,len(message_log),+2):
+                    self.listwdg_teamChatChattingBox.addItem(f"보낸사람 : {message_log[i]}  메세지: {message_log[i+1]}")
                     self.listwdg_teamChatChattingBox.scrollToBottom()
-
 
         so.close()
 
@@ -194,14 +193,16 @@ class Client(QWidget, form_class):
         self.led_insertTeamChat.clear()
 
     def newchatroom(self):
+        self.listwdg_teamChatChattingBox.clear()
         # 신규채팅방으로 이동
         self.stcwdg_teamchatting.setCurrentIndex(1)
         self.label_teamChatName.setText(self.listwdg_teamChat.currentItem().text())
         text = self.listwdg_teamChat.currentItem().text()
-        send_newchatNamelist = ['plzReceiveNewchatName', text]
+        send_newchatNamelist = ['채팅방이름', text]
         send_newchatName = json.dumps(send_newchatNamelist)
         self.client_socket.send(send_newchatName.encode('utf-8'))
-
+        # 스크롤 맨 아래로 고정
+        self.listwdg_teamChatChattingBox.scrollToBottom()
 
 
 

@@ -78,11 +78,7 @@ class MultiChatServer:
             for j in range(len(Newchat_list[i])):
                 list_Newchat_info.append(Newchat_list[i][j])
 
-        print(list_Newchat_info)
         return list_Newchat_info
-
-
-
 
     # 연결 클라이언트 소켓을 목록에 추가하고 스레드를 생성하여 데이터를 수신한다
     def accept_client(self):
@@ -91,29 +87,22 @@ class MultiChatServer:
             if client not in self.clients:
                 self.clients.append(client)  # 접속된 소켓을 목록에 추가
 
-                list_chat_info = self.method_getAllChat()   # 모든 채팅 DB에서 가져오기
-                setdata1 = json.dumps(list_chat_info)        # json.dumps로 리스트의 값들 바이트형으로 바꿔줌
+                list_chat_info = self.method_getAllChat()               # 모든 채팅 DB에서 가져오기
+                setdata1 = json.dumps(list_chat_info)                   # json.dumps로 리스트의 값들 바이트형으로 바꿔줌
                 c_socket.send(setdata1.encode())
-                print(list_chat_info)# 연결된 소켓에 채팅 로그 데이터 보내줌
+                print(list_chat_info)                                   # 연결된 소켓에 채팅 로그 데이터 보내줌
 
                 list_connection_info = self.method_getAllConnection()   # 모든 접속자 DB에서 가져오기
                 setdata2 = json.dumps(list_connection_info)              # json.dumps로 리스트의 값들 바이트형으로 바꿔줌
                 c_socket.send(setdata2.encode())                         # 연결된 소켓에 채팅 로그 데이터 보내줌
                 print(list_connection_info)
-                print('11111111111111111111111111111111111111111111')
                 time.sleep(1)
 
-                # 새로운 채팅방 리스트
                 list_Newchat_info = self.method_getAllNewChat()
                 setdata3 = json.dumps(list_Newchat_info)
                 c_socket.send(setdata3.encode())
                 print(list_Newchat_info)
 
-                # # 새로운 채팅방 대화목록
-                # list_Newchatroom_info = self.method_getAllNewChatroom()
-                # setdata4 = json.dumps(list_Newchatroom_info)
-                # c_socket.send(setdata4.encode())
-                # print(list_Newchat_info)
 
             print(datetime.now().strftime('%D %T'), '주소:', ip, ' 포트번호:', str(port), '가 연결되었습니다')
 
@@ -140,38 +129,34 @@ class MultiChatServer:
                     self.sendNewchat_all_clients(c_socket)        # 열려있는 모든 클라이언트들에게 새채팅방 보내기
                 if self.recived_message[0] == 'plzReceiveNewMessage':
                     self.sendNewMessage_all_clients(c_socket)          # 열려있는 모든 클라이언트들에게 새로운메세지 보내기
-                if self.recived_message[0] == 'plzReceiveNewchatName':
-                    # list_Newchatroom_info = self.method_getAllNewChatroom()
-                    # setdata4 = json.dumps(list_Newchatroom_info)
-                    # c_socket.send(setdata4.encode())
-                    # print(list_Newchat_info)
+                if self.recived_message[0] == '채팅방이름':
                     self.method_getAllNewChatroom(c_socket)  # 열려있는 모든 클라이언트들에게 새로운메세지 보내기
 
 
         c_socket.close()
 
     def method_getAllNewChatroom(self,c_socket):
-        message = ['plzReceiveNewchatName', f"[{self.recived_message[1]}]"]
-        sendall_message = json.dumps(message)
         self.open_db()
         # 채팅로그 불러오기
-        self.c.execute(f"select * from network_project.new_chat where chatlist = '{self.recived_message[1]}' and name is not null")
+        self.c.execute(f"select name,message from network_project.new_chat where chatlist ="
+                       f" '{self.recived_message[1]}' and name is not null")
         Newchat_list = self.c.fetchall()
 
         print(Newchat_list)
         self.conn.close()
 
+        # 새로운채팅방에 대화내용이 없을경우
         if bool(Newchat_list) == False:
             pass
         else:
-            list_Newchatroom_info = ['allNewChatroom_data']
+            list_Newchatroom_info = ['지난메세지']
 
             # DB에서 가져온 튜플 리스트화
             for i in range(len(Newchat_list)):
                 for j in range(len(Newchat_list[i])):
                     list_Newchatroom_info.append(Newchat_list[i][j])
 
-            setdata = json.dumps(Newchat_list)
+            setdata = json.dumps(list_Newchatroom_info)
             c_socket.send(setdata.encode())
 
             print(list_Newchatroom_info)
@@ -182,12 +167,12 @@ class MultiChatServer:
         message = ['plzReceiveMessage',
                    f"[{self.recived_message[1]}] [{self.recived_message[2]}]\n{self.recived_message[3]}"]
         sendall_message = json.dumps(message)
-        for client in self.clients:     # 목록에 있는 모든 소켓에 대해
+        for client in self.clients:                 # 목록에 있는 모든 소켓에 대해
             socket, (ip, port) = client
-            if socket is not senders_socket:    # 송신 클라이언트는 제외
+            if socket is not senders_socket:       # 송신 클라이언트는 제외
                 try:
                     socket.sendall(sendall_message.encode())
-                except:     # 메시지가 전송되지 않으면 연결 종료된 소켓이므로 지워준다
+                except:                             # 메시지가 전송되지 않으면 연결 종료된 소켓이므로 지워준다
                     self.clients.remove(client)     # 소켓 제거
                     print(f"{datetime.now().strftime('%D %T')}, {ip}, {port} 연결이 종료되었습니다")
 
@@ -204,12 +189,12 @@ class MultiChatServer:
                  f"\n<<< [{self.recived_message[1]}] [{self.recived_message[2]}] 님이 채팅방에 입장하셨습니다 >>>\n",
                  self.recived_message[2]]
         sendall_Alarm = json.dumps(alarm)
-        for client in self.clients:  # 목록에 있는 모든 소켓에 대해
+        for client in self.clients:                             # 목록에 있는 모든 소켓에 대해
             socket, (ip, port) = client
-            if socket is not senders_socket:  # 송신 클라이언트는 제외
+            if socket is not senders_socket:                    # 송신 클라이언트는 제외
                 try:
                     socket.sendall(sendall_Alarm.encode())      # 연결된 소켓(클라이언트)에 알람 데이터 보내줌
-                except:  # 연결 종료
+                except:                                         # 연결 종료
                     self.clients.remove(client)  # 소켓 제거
                     print(f"{datetime.now().strftime('%D %T')}, {ip}, {port} 연결이 종료되었습니다")
 
@@ -245,25 +230,22 @@ class MultiChatServer:
                    f"[{self.recived_message[1]}] [{self.recived_message[2]}]\n{self.recived_message[3]}"]
         print(newmessage)
         sendall_newmessage = json.dumps(newmessage)
-        for client in self.clients:     # 목록에 있는 모든 소켓에 대해
+        for client in self.clients:                         # 목록에 있는 모든 소켓에 대해
             socket, (ip, port) = client
-            if socket is not senders_socket:    # 송신 클라이언트는 제외
+            if socket is not senders_socket:                # 송신 클라이언트는 제외
                 try:
                     socket.sendall(sendall_newmessage.encode())
-                except:     # 메시지가 전송되지 않으면 연결 종료된 소켓이므로 지워준다
-                    self.clients.remove(client)     # 소켓 제거
+                except:                                     # 메시지가 전송되지 않으면 연결 종료된 소켓이므로 지워준다
+                    self.clients.remove(client)             # 소켓 제거
                     print(f"{datetime.now().strftime('%D %T')}, {ip}, {port} 연결이 종료되었습니다")
 
         self.open_db()
         # insert문 넣어주기(언제몇시몇분에 누가 채팅을 쳤습니다)
-        self.c.execute(f"insert into network_project.new_chat (chatlist,name,message) value ('{self.recived_message[1]}','{self.recived_message[2]}','{self.recived_message[3]}')")
+        self.c.execute(f"insert into network_project.new_chat (chatlist,name,message) value "
+                       f"('{self.recived_message[1]}','{self.recived_message[2]}','{self.recived_message[3]}')")
         self.conn.commit()
         self.conn.close()
 
 
 if __name__ == "__main__":
     MultiChatServer()
-
-
-
-
