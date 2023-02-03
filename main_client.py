@@ -130,6 +130,7 @@ class Client(QWidget, form_class):
                             # 리스트 위젯 스크롤바 아래로 고정
                             self.listwdg_chattingBox.scrollToBottom()
                             a += 1
+                    print(message_log)
                 # 현재 접속 인원 출력(처음 입장, 누가 퇴장했을 때 갱신됨)
                 elif identifier == 'allConnection_data':
                     self.listwdg_connectionPeople.clear()
@@ -153,20 +154,17 @@ class Client(QWidget, form_class):
                     # 리스트 위젯 스크롤바 아래로 고정
                     self.listwdg_chattingBox.scrollToBottom()
                 # 다른 클라이언트 채팅방목록 보여주기
-                elif message_log[0] == 'plzReceiveNewchat':
-                    message_log.pop(0)
+                elif identifier == 'plzReceiveNewchat':
                     for i in range(len(message_log)):
                         self.listwdg_teamChatChattingBox.addItem(message_log[i])
                         self.listwdg_teamChatChattingBox.scrollToBottom()
                 # 다른 클라이언트 채팅방목록 보여주기
-                elif message_log[0] == 'allNewChat_data':
-                    message_log.pop(0)
+                elif identifier == 'allNewChat_data':
                     for i in range(len(message_log)):
                         self.listwdg_teamChat.addItem(message_log[i])
                         self.listwdg_teamChat.scrollToBottom()
                 # 새로운 채팅내용
-                elif message_log[0] == '지난메세지':
-                    message_log.pop(0)
+                elif identifier == '지난메세지':
                     print(message_log)
                     for i in range(0, len(message_log), +2):
                         self.listwdg_teamChatChattingBox.addItem(
@@ -183,6 +181,7 @@ class Client(QWidget, form_class):
 
         self.listwdg_chattingBox.addItem(f"[{datetime.now().strftime('%D %T')}] [★링컨이★]\n{self.led_insertName.text()}님이 채팅방에서 나가셨습니다")
         self.led_insertName.clear()
+        self.listwdg_connectionPeople.clear()
         self.stackedWidget.setCurrentIndex(0)
 
     # 유저가 종료했을 경우 (함수를 따로 실행 안해도 종료하면 알아서 실행됨)

@@ -46,16 +46,16 @@ class MultiChatServer:
         # DB 닫아주기
         chat_alldata.close()
 
-        list_chat_info = ['allChat_data']
-
-        # DB에서 가져온 튜플 리스트화
-        for i in range(len(chat_info)):
-            for j in range(len(chat_info[i])):
-                if type(chat_info[i][j]) == datetime:
-                    list_chat_info.append(chat_info[i][j].strftime('%D %T'))
-                else:
-                    list_chat_info.append(chat_info[i][j])
-        return list_chat_info
+        # list_chat_info = ['allChat_data']
+        #
+        # # DB에서 가져온 튜플 리스트화
+        # for i in range(len(chat_info)):
+        #     for j in range(len(chat_info[i])):
+        #         if type(chat_info[i][j]) == datetime:
+        #             list_chat_info.append(chat_info[i][j].strftime('%D %T'))
+        #         else:
+        #             list_chat_info.append(chat_info[i][j])
+        return chat_info
 
     # 모든 접속 멤버 가져오기
     def method_getAllConnection(self):
@@ -106,9 +106,17 @@ class MultiChatServer:
             if client not in self.clients:
                 self.clients.append(client)  # 접속된 소켓을 목록에 추가
 
-                list_chat_info = self.method_getAllChat()   # 모든 채팅 DB에서 가져오기
-                setdata = json.dumps(list_chat_info)        # json.dumps로 리스트의 값들 바이트형으로 바꿔줌
-                c_socket.send(setdata.encode())             # 연결된 소켓에 채팅 로그 데이터 보내줌
+                two_dimentional_chat_info = self.method_getAllChat()  # 모든 채팅 DB에서 가져오기(2차원튜플)
+                for i in range(len(two_dimentional_chat_info)):
+                    chat_info = ['allChat_data']
+                    for j in range(len(two_dimentional_chat_info[i])):
+                        if type(two_dimentional_chat_info[i][j]) == datetime:
+                            chat_info.append(two_dimentional_chat_info[i][j].strftime('%D %T'))
+                        else:
+                            chat_info.append(two_dimentional_chat_info[i][j])
+                    setdata = json.dumps(chat_info)  # json.dumps로 리스트의 값들 바이트형으로 바꿔줌
+                    c_socket.send(setdata.encode())  # 연결된 소켓에 채팅 로그 데이터 보내줌
+                    time.sleep(0.2)
 
                 list_connection_info = self.method_getAllConnection()   # 모든 접속자 DB에서 가져오기
                 setdata2 = json.dumps(list_connection_info)              # json.dumps로 리스트의 값들 바이트형으로 바꿔줌
@@ -241,12 +249,12 @@ class MultiChatServer:
         sendall_leaveMessage = json.dumps(alarmLeaveMessage)
         for client in self.clients:  # 목록에 있는 모든 소켓에 대해
             socket, (ip, port) = client
-            if socket is not senders_socket:
-                try:
-                    socket.sendall(sendall_leaveMessage.encode())
-                except:  # 메시지가 전송되지 않으면 연결 종료된 소켓이므로 지워준다
-                    self.clients.remove(client)  # 소켓 제거
-                    print(f"{datetime.now().strftime('%D %T')}, {ip}, {port} 연결이 종료되었습니다")
+            # if socket is not senders_socket:
+            try:
+                socket.sendall(sendall_leaveMessage.encode())
+            except:  # 메시지가 전송되지 않으면 연결 종료된 소켓이므로 지워준다
+                self.clients.remove(client)  # 소켓 제거
+                print(f"{datetime.now().strftime('%D %T')}, {ip}, {port} 연결이 종료되었습니다")
 
     # 모든 클라이언트로 입장 알람 보내기
     def sendAlarm_all_clients(self, senders_socket):

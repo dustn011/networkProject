@@ -38,7 +38,6 @@ class Client(QWidget, form_class):
 
         # 스레드 함수 실행
         self.listen_thread()
-        self.set_chattingLog = 0
 
     # 소켓 설정 메서드
     def initialize_socket(self):
